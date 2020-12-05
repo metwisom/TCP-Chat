@@ -11,7 +11,7 @@ var config Config
 
 func main() {
 	config, err := LoadConfig("./config.json")
-	if err != nil {
+	if IsDefaultCrated(err) || err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
