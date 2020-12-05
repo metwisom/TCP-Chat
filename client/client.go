@@ -7,10 +7,12 @@ import (
 	"os"
 )
 
-var config Config
-
 func main() {
-	LoadConfig(&config)
+	config, err := LoadConfig("./config.json")
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port))
 	if err != nil {
 		fmt.Println("Error connecting to server")

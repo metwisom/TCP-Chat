@@ -10,7 +10,11 @@ import (
 var config Config
 
 func main() {
-	LoadConfig(&config)
+	config, err := LoadConfig("./config.json")
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", config.Server.Port))
 	if err != nil {
 		fmt.Printf("Server creation error: %s", err.Error())
