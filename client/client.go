@@ -7,20 +7,25 @@ import (
 	"os"
 )
 
+var config Config
+
 func main() {
-	conn, err := net.Dial("tcp", "10.180.91.44:8089")
+	LoadConfig(&config)
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port))
 	if err != nil {
-		fmt.Println("Ошибка подключения")
+		fmt.Println("Error connecting to server")
 	}
-	fmt.Println("Соедниенение установлено")
+	fmt.Println("Connection successfully established")
 	go reader(conn)
 	for {
-		input, _ := bufio.NewReader(os.Stdin).ReadString('\n')
-		fmt.Println("second")
-		message := []byte(input)
-		_, err := conn.Write(message)
+		input, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
-			fmt.Printf(err.Error())
+			fmt.Println(err.Error())
+		}
+		message := []byte(input)
+		length, err := conn.Write(message)
+		if err != nil {
+			fmt.Printf("Send error: %s\nBytes written: %d", err.Error(), length)
 			break
 		}
 	}
@@ -29,10 +34,11 @@ func main() {
 func reader(conn net.Conn) {
 	for {
 		message, err := bufio.NewReader(conn).ReadString('\n')
-		if err.Error() == "EOF" {
-			fmt.Println("Собеседник отключился")
+		if err != nil {
+			fmt.Println("Server connection interrupted")
+			fmt.Println(err.Error())
 			break
 		}
-		fmt.Println("Собеседник:" + message)
+		fmt.Println("Received: " + message)
 	}
 }

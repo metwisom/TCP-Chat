@@ -7,27 +7,48 @@ import (
 	"os"
 )
 
+var config Config
+
 func main() {
-	ln, _ := net.Listen("tcp", ":8089")
+	LoadConfig(&config)
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", config.Server.Port))
+	if err != nil {
+		fmt.Printf("Server creation error: %s", err.Error())
+	}
 	for {
-		conn, _ := ln.Accept()
-		fmt.Println("Собеседник подключился")
+		conn, err := ln.Accept()
+		if err != nil {
+			fmt.Printf("Client connection error: %s", err.Error())
+		}
+		fmt.Println("Client connected")
 		go handleConnection(conn)
 	}
 }
 
 func handleConnection(conn net.Conn) {
-	reader(conn)
+	go reader(conn)
 	for {
-		input, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+		input, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 		message := []byte(input)
-		conn.Write(message)
+		length, err := conn.Write(message)
+		if err != nil {
+			fmt.Printf("Send error: %s\nBytes written: %d", err.Error(), length)
+			break
+		}
 	}
 }
 
 func reader(conn net.Conn) {
 	for {
-		message, _ := bufio.NewReader(conn).ReadString('\n')
-		fmt.Println("Собеседник:" + message)
+		message, err := bufio.NewReader(conn).ReadString('\n')
+		if err != nil {
+			fmt.Println("Server connection interrupted")
+			fmt.Println(err.Error())
+			break
+		}
+		fmt.Println("Received: " + message)
 	}
 }
