@@ -1,24 +1,31 @@
-package main
+package server
 
 import (
 	"bufio"
 	"fmt"
 	"net"
 	"os"
+
+	"../config"
 )
 
-func main() {
-	config, err := LoadConfig("./config.json")
-	if IsDefaultCrated(err) || err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", config.Server.Host, config.Server.Port))
+func CreateServer(cfg *config.Config) {
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Server.Port))
 	if err != nil {
-		fmt.Println("Error connecting to server")
+		fmt.Printf("Server creation error: %s", err.Error())
 	}
-	fmt.Println("Connection successfully established")
-	go reader(conn)
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			fmt.Printf("Client connection error: %s", err.Error())
+		}
+		fmt.Println("Client connected")
+		go HandleConnection(conn)
+	}
+}
+
+func HandleConnection(conn net.Conn) {
+	go Reader(conn)
 	for {
 		input, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
@@ -33,7 +40,7 @@ func main() {
 	}
 }
 
-func reader(conn net.Conn) {
+func Reader(conn net.Conn) {
 	for {
 		message, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {

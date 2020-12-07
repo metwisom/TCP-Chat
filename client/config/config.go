@@ -1,7 +1,6 @@
-package main
+package config
 
 import (
-	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -74,13 +73,11 @@ func decodeConfig(bConfig []byte) (*Config, error) {
 func createDefaultConfig(path string) error {
 	var config Config
 	config.set_default()
-	file, err := os.Create(path)
+	bConfig, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
 		return errors.New(fmt.Sprintf(DEFAULT_CREATE_ERROR, err.Error()))
 	}
-	w := bufio.NewWriter(file)
-	encoder := json.NewEncoder(w)
-	err = encoder.Encode(config)
+	err = ioutil.WriteFile(path, bConfig, 0644)
 	if err != nil {
 		return errors.New(fmt.Sprintf(DEFAULT_CREATE_ERROR, err.Error()))
 	}
