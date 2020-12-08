@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	LOAD_ERROR           = "Config file loading error: %s\n"
-	DEFAULT_CREATE_ERROR = "Error creating default config: %s\n"
-	DEFAULT_CREATED      = "Default config created, configure it"
+	LoadError          = "Config file loading error: %s\n"
+	DefaultCreateError = "Error creating default config: %s\n"
+	CreateDefault      = "Default config created, configure it\n"
 )
 
 type Config struct {
@@ -21,8 +21,7 @@ type Config struct {
 	} `json:"server"`
 }
 
-func (c *Config) set_default() {
-	c.Server.Host = "localhost"
+func (c *Config) setDefault() {
 	c.Server.Port = 8089
 }
 
@@ -33,9 +32,9 @@ func LoadConfig(path string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		return nil, errors.New(DEFAULT_CREATED)
+		return nil, errors.New(CreateDefault)
 	} else if err != nil {
-		return nil, errors.New(fmt.Sprintf(LOAD_ERROR, err.Error()))
+		return nil, errors.New(fmt.Sprintf(LoadError, err.Error()))
 	}
 	bConfig, err := readConfig(path)
 	if err != nil {
@@ -45,18 +44,23 @@ func LoadConfig(path string) (*Config, error) {
 }
 
 func IsDefaultCrated(err error) bool {
-	return err.Error() == DEFAULT_CREATED
+	return err.Error() == CreateDefault
 }
 
 func readConfig(path string) ([]byte, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf(LOAD_ERROR, err.Error()))
+		return nil, errors.New(fmt.Sprintf(LoadError, err.Error()))
 	}
-	defer file.Close()
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			fmt.Printf("Error when closing file: %s", err.Error())
+		}
+	}()
 	bConfig, err := ioutil.ReadAll(file)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf(LOAD_ERROR, err.Error()))
+		return nil, errors.New(fmt.Sprintf(LoadError, err.Error()))
 	}
 	return bConfig, nil
 }
@@ -65,21 +69,21 @@ func decodeConfig(bConfig []byte) (*Config, error) {
 	var config Config
 	err := json.Unmarshal(bConfig, &config)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf(LOAD_ERROR, err.Error()))
+		return nil, errors.New(fmt.Sprintf(LoadError, err.Error()))
 	}
 	return &config, nil
 }
 
 func createDefaultConfig(path string) error {
 	var config Config
-	config.set_default()
+	config.setDefault()
 	bConfig, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
-		return errors.New(fmt.Sprintf(DEFAULT_CREATE_ERROR, err.Error()))
+		return errors.New(fmt.Sprintf(DefaultCreateError, err.Error()))
 	}
 	err = ioutil.WriteFile(path, bConfig, 0644)
 	if err != nil {
-		return errors.New(fmt.Sprintf(DEFAULT_CREATE_ERROR, err.Error()))
+		return errors.New(fmt.Sprintf(DefaultCreateError, err.Error()))
 	}
 	return nil
 }

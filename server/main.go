@@ -8,8 +8,6 @@ import (
 	"./server"
 )
 
-var cfg config.Config
-
 func main() {
 	cfg, err := config.LoadConfig("./config.json")
 	if (err != nil && config.IsDefaultCrated(err)) || err != nil {
